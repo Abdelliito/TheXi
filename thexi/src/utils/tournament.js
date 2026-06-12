@@ -58,7 +58,8 @@ export const formatMatchDate = (game, options = {}) => {
   const date = getMatchDate(game);
   if (!date) return game?.local_date || 'Date TBA';
 
-  return new Intl.DateTimeFormat('en', {
+  return new Intl.DateTimeFormat('en-PK', {
+    timeZone: 'Asia/Karachi',
     month: 'short',
     day: 'numeric',
     year: 'numeric',

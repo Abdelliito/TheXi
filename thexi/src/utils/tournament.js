@@ -39,18 +39,29 @@ export const parseScorers = (scorersStr) => {
     .filter(Boolean);
 };
 
+// The API stores kickoff times as host-city local time.
+// WC2026 venues span UTC-4 (EDT) to UTC-7 (PDT) during June.
+// We apply UTC-4 (Eastern Daylight Time) as the baseline, which covers the
+// majority of US/Canada venues and gives correct PKT = local + 9 h.
+const VENUE_UTC_OFFSET = '-04:00';
+
 export const getMatchDate = (game) => {
   const value = game?.local_date || game?.date || game?.datetime;
   if (!value) return null;
 
-  const normalized = String(value).replace(' ', 'T');
-  const parsed = new Date(normalized);
-  if (!Number.isNaN(parsed.getTime())) return parsed;
+  // Try to parse "MM/DD/YYYY HH:MM" → ISO 8601 with venue offset
+  const matchMDY = String(value).match(
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})$/
+  );
+  if (matchMDY) {
+    const [, mm, dd, yyyy, hh, min] = matchMDY;
+    const iso = `${yyyy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}T${hh.padStart(2,'0')}:${min}:00${VENUE_UTC_OFFSET}`;
+    const d = new Date(iso);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
 
-  const [datePart, timePart = '00:00'] = String(value).split(' ');
-  const [month, day, year] = datePart.split('/').map(Number);
-  const [hour, minute] = timePart.split(':').map(Number);
-  const fallback = new Date(year, month - 1, day, hour, minute);
+  // Fallback: let the browser parse (e.g. already an ISO string)
+  const fallback = new Date(String(value).replace(' ', 'T'));
   return Number.isNaN(fallback.getTime()) ? null : fallback;
 };
 
@@ -58,13 +69,15 @@ export const formatMatchDate = (game, options = {}) => {
   const date = getMatchDate(game);
   if (!date) return game?.local_date || 'Date TBA';
 
-  return new Intl.DateTimeFormat('en-PK', {
+  // Convert the correct UTC timestamp → Pakistan Standard Time (UTC+5)
+  return new Intl.DateTimeFormat('en-US', {
     timeZone: 'Asia/Karachi',
     month: 'short',
     day: 'numeric',
     year: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
+    hour12: true,
     ...options,
   }).format(date);
 };

@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
+import ScrollToTop from './components/common/ScrollToTop';
 import Home from './pages/Home';
 import Fixtures from './pages/Fixtures';
 import Teams from './pages/Teams';
@@ -12,6 +13,7 @@ import NotFound from './pages/NotFound';
 function App() {
   return (
     <Router>
+      <ScrollToTop />
       <div className="min-h-screen bg-[#090d16] text-[#f8fafc]">
         <Navbar />
 
@@ -31,3 +33,4 @@ function App() {
 }
 
 export default App;
+
